@@ -1,6 +1,6 @@
 # mcp2ws
 
-Did you just wake up from a 20 year comma? Did you build a bunch of buzzword compliant web services
+Did you just wake up from a 20 year coma? Did you build a bunch of buzzword compliant web services
 back in the early 2000s and want all your [SOAP](https://en.wikipedia.org/wiki/SOAP) and
 [WSDL](https://en.wikipedia.org/wiki/Web_Services_Description_Language) and
 [WS-*](https://en.wikipedia.org/wiki/List_of_web_service_specifications) and
