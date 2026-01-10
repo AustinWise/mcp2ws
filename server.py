@@ -1,7 +1,7 @@
 import argparse
 import sys
 import asyncio
-from typing import Any, Dict, List
+from typing import Dict, List
 from mcp.server.lowlevel import Server
 from mcp.server.stdio import stdio_server
 import mcp.types as types
