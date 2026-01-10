@@ -2,6 +2,9 @@
 
 This is an MCP (Model Context Protocol) server that acts as a gateway to SOAP-based web services. It uses `suds` to communicate with the SOAP service and `mcp` to expose the functionality to an MCP client (like an LLM).
 
+NOTE: this code is absolute garbage and should not be used. It currently calls `str()` on the parsed
+WSDL object and then use regexes to parse the output. But it *does* work...
+
 ## Prerequisites
 
 - Python 3.10+
@@ -52,3 +55,4 @@ Configure your MCP client (e.g., Gemini CLI, or an IDE extension) to run this sc
   }
 }
 ```
+http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL
