@@ -3,9 +3,11 @@ import sys
 import asyncio
 from typing import Dict, List
 from mcp.server.lowlevel import Server
+from mcp.server.lowlevel.server import StructuredContent
 from mcp.server.stdio import stdio_server
 import mcp.types as types
 from suds.client import Client # type: ignore
+from suds.sudsobject import recursive_asdict
 
 # Type mapping from XML Schema types to JSON Schema types
 TYPE_MAPPING = {
@@ -88,23 +90,16 @@ def main():
     @server.call_tool()
     async def handle_call_tool(
         name: str, arguments: dict | None
-    ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
+    ) -> StructuredContent:
         if name not in parsed_methods:
             raise ValueError(f"Unknown tool: {name}")
 
-        try:
-            service = client.service
-            method = getattr(service, name)
-            
-            # Execute SOAP call
-            # Arguments are passed as kwargs. 
-            # Note: suds expects arguments in order or as kwargs matching names.
-            # Our parsing extracted names so kwargs should work.
-            result = method(**(arguments or {}))
-            
-            return [types.TextContent(type="text", text=str(result))]
-        except Exception as e:
-            return [types.TextContent(type="text", text=f"Error executing {name}: {str(e)}")]
+        service = client.service
+        method = getattr(service, name)
+        result = method(**(arguments or {}))
+        result = recursive_asdict(result)
+
+        return result
 
     async def run_server():
         async with stdio_server() as (read_stream, write_stream):

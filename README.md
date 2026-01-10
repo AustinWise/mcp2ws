@@ -2,9 +2,9 @@
 
 Did you just wake up from a 20 year coma? Did you build a bunch of buzzword compliant web services
 back in the early 2000s and want all your [SOAP](https://en.wikipedia.org/wiki/SOAP) and
-[WSDL](https://en.wikipedia.org/wiki/Web_Services_Description_Language) and
+[WSDL](https://en.wikipedia.org/wiki/Web_Services_Description_Language)
 to be relevant again?
-Fear not, now you can put the smooth sheen of AI on your pile of angle brackets by exposing your
+Now you can put the smooth sheen of AI on your pile of angle brackets by exposing your
 SOAP-based web service as a [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server.
 
 ## Prerequisites
@@ -43,7 +43,7 @@ For example, if you have a WSDL at `http://www.dneonline.com/calculator.asmx?wsd
 uv run main.py http://www.dneonline.com/calculator.asmx?wsdl
 ```
 
-This tool has been tested with these ran WSDL files I found on the internet:
+This tool has been tested with these random WSDL files I found on the internet:
 
 * http://www.dneonline.com/calculator.asmx?wsdl
 * http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL
@@ -62,9 +62,9 @@ Configure your MCP client (e.g., Gemini CLI, or an IDE extension) to run this sc
       "args": [
         "run",
         "--project",
-        "/path/to/mcp2ws/",
+        "/path/to/mcp2ws/pyproject.toml",
         "/path/to/mcp2ws/main.py",
-        "http://www.dneonline.com/calculator.asmx?wsdl"
+        "http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL"
       ]
     }
   }
@@ -98,7 +98,7 @@ service:
 
 ## TODO
 
-* Better support for mapping XML schema to JSON schema. Currently only primitive types are supported.
+* Better support for mapping XML schema to JSON schema for input. Currently only primitive types are supported.
 * Implement support for more of fun web service standards like
   [WS-*](https://en.wikipedia.org/wiki/List_of_web_service_specifications) and
   [UDDI](https://en.wikipedia.org/wiki/Web_Services_Discovery).
