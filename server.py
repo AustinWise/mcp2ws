@@ -1,7 +1,6 @@
 import argparse
 import sys
 import asyncio
-import re
 from typing import Any, Dict, List
 from mcp.server.lowlevel import Server
 from mcp.server.stdio import stdio_server
@@ -23,52 +22,20 @@ TYPE_MAPPING = {
 
 def parse_suds_methods(client: Client) -> Dict[str, List[Dict[str, str]]]:
     """
-    Parses the string representation of the suds client to extract method signatures.
+    Parses the suds client object to extract method signatures using internal data structures.
     Returns a dictionary where keys are method names and values are lists of argument definitions.
     """
     methods = {}
-    # TODO: this is a disgusting, replace with actually iterating over data structures
-    client_str = str(client)
     
-    # Regex to find methods lines like: Name(Type Arg, Type Arg)
-    # This matches lines indented in the "Methods" section
-    # Example:     Add(xs:int intA, xs:int intB)
-    method_pattern = re.compile(r'^\s+([a-zA-Z0-9_]+)\((.*)\)\s*$')
-    
-    lines = client_str.splitlines()
-    parsing_methods = False
-    
-    for line in lines:
-        if "Methods" in line and "(" in line and ")" in line:
-             parsing_methods = True
-             continue
-        if "Types" in line and "(" in line:
-             parsing_methods = False
-             continue
-             
-        if parsing_methods:
-            match = method_pattern.match(line)
-            if match:
-                method_name = match.group(1)
-                args_str = match.group(2)
+    for sd in client.sd:
+        for port, port_methods in sd.ports:
+            for method_name, method_args in port_methods:
                 args = []
-                if args_str.strip():
-                    # Split arguments by comma
-                    arg_parts = args_str.split(',')
-                    for part in arg_parts:
-                        part = part.strip()
-                        # Expected format: "xs:type argName"
-                        # But sometimes just "type argName" or complex types
-                        # Regex: (type_str) (arg_name)
-                        arg_match = re.match(r'^(.*?)\s+(\w+)$', part)
-                        if arg_match:
-                            type_name = arg_match.group(1)
-                            arg_name = arg_match.group(2)
-                            args.append({"name": arg_name, "type": type_name})
-                        else:
-                            # Fallback if parsing fails
-                            args.append({"name": part, "type": "xs:string"})
+                for arg_name, arg_type, _ in method_args:
+                    type_name = sd.xlate(arg_type)
+                    args.append({"name": arg_name, "type": type_name})
                 methods[method_name] = args
+    
     return methods
 
 def main():
