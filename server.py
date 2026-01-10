@@ -1,9 +1,75 @@
 import argparse
 import sys
-import json
+import asyncio
+import re
 from typing import Any, Dict, List
-from mcp.server.fastmcp import FastMCP
+from mcp.server.lowlevel import Server
+from mcp.server.stdio import stdio_server
+import mcp.types as types
 from suds.client import Client # type: ignore
+
+# Type mapping from XML Schema types to JSON Schema types
+TYPE_MAPPING = {
+    'xs:int': 'integer',
+    'xs:integer': 'integer',
+    'xs:long': 'integer',
+    'xs:short': 'integer',
+    'xs:string': 'string',
+    'xs:boolean': 'boolean',
+    'xs:double': 'number',
+    'xs:float': 'number',
+    'xs:decimal': 'number',
+}
+
+def parse_suds_methods(client: Client) -> Dict[str, List[Dict[str, str]]]:
+    """
+    Parses the string representation of the suds client to extract method signatures.
+    Returns a dictionary where keys are method names and values are lists of argument definitions.
+    """
+    methods = {}
+    # TODO: this is a disgusting, replace with actually iterating over data structures
+    client_str = str(client)
+    
+    # Regex to find methods lines like: Name(Type Arg, Type Arg)
+    # This matches lines indented in the "Methods" section
+    # Example:     Add(xs:int intA, xs:int intB)
+    method_pattern = re.compile(r'^\s+([a-zA-Z0-9_]+)\((.*)\)\s*$')
+    
+    lines = client_str.splitlines()
+    parsing_methods = False
+    
+    for line in lines:
+        if "Methods" in line and "(" in line and ")" in line:
+             parsing_methods = True
+             continue
+        if "Types" in line and "(" in line:
+             parsing_methods = False
+             continue
+             
+        if parsing_methods:
+            match = method_pattern.match(line)
+            if match:
+                method_name = match.group(1)
+                args_str = match.group(2)
+                args = []
+                if args_str.strip():
+                    # Split arguments by comma
+                    arg_parts = args_str.split(',')
+                    for part in arg_parts:
+                        part = part.strip()
+                        # Expected format: "xs:type argName"
+                        # But sometimes just "type argName" or complex types
+                        # Regex: (type_str) (arg_name)
+                        arg_match = re.match(r'^(.*?)\s+(\w+)$', part)
+                        if arg_match:
+                            type_name = arg_match.group(1)
+                            arg_name = arg_match.group(2)
+                            args.append({"name": arg_name, "type": type_name})
+                        else:
+                            # Fallback if parsing fails
+                            args.append({"name": part, "type": "xs:string"})
+                methods[method_name] = args
+    return methods
 
 def main():
     parser = argparse.ArgumentParser(description="MCP Server for SOAP Web Services")
@@ -12,57 +78,82 @@ def main():
 
     wsdl_url = args.wsdl
     
-    # Initialize FastMCP server
-    mcp = FastMCP("SOAP Gateway")
-
-    # Initialize SOAP client
     try:
         client = Client(wsdl_url)
     except Exception as e:
         print(f"Error loading WSDL: {e}", file=sys.stderr)
         sys.exit(1)
 
-    @mcp.tool()
-    def list_methods() -> str:
-        """
-        Lists all available methods in the SOAP web service and their signatures.
-        Returns a string representation of the service description.
-        """
-        # suds client string representation gives a good overview of methods and types
-        return str(client)
+    # Parse methods early to fail fast if parsing fails
+    parsed_methods = parse_suds_methods(client)
+    print(f"Discovered methods: {list(parsed_methods.keys())}", file=sys.stderr)
 
-    @mcp.tool()
-    def call_method(method_name: str, parameters: Dict[str, Any] = {}) -> str:
-        """
-        Calls a specific SOAP method with the provided parameters.
-        
-        Args:
-            method_name: The name of the method to call (case-sensitive as per WSDL).
-            parameters: A dictionary of arguments to pass to the method. 
-                        Keys should match the argument names expected by the SOAP method.
-        """
+    server = Server("SOAP Gateway")
+
+    @server.list_tools()
+    async def handle_list_tools(request: types.ListToolsRequest) -> types.ListToolsResult:
+        tools = []
+        for name, args in parsed_methods.items():
+            properties = {}
+            required = []
+            
+            for arg in args:
+                arg_name = arg['name']
+                arg_type = arg['type']
+                json_type = TYPE_MAPPING.get(arg_type, 'string')
+                
+                properties[arg_name] = {"type": json_type}
+                required.append(arg_name)
+            
+            tool = types.Tool(
+                name=name,
+                description=f"SOAP method: {name}",
+                inputSchema={
+                    "type": "object",
+                    "properties": properties,
+                    "required": required
+                }
+            )
+            tools.append(tool)
+            
+        return types.ListToolsResult(tools=tools)
+
+    @server.call_tool()
+    async def handle_call_tool(
+        name: str, arguments: dict | None
+    ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
+        if name not in parsed_methods:
+            raise ValueError(f"Unknown tool: {name}")
+
         try:
             service = client.service
-            if not hasattr(service, method_name):
-                return f"Error: Method '{method_name}' not found."
+            method = getattr(service, name)
             
-            method = getattr(service, method_name)
+            # Execute SOAP call
+            # Arguments are passed as kwargs. 
+            # Note: suds expects arguments in order or as kwargs matching names.
+            # Our parsing extracted names so kwargs should work.
+            result = method(**(arguments or {}))
             
-            # call the method with unpacked parameters
-            # Note: suds handles simple types and some complex types via dicts automatically.
-            # For very complex types, suds 'factory' might be needed, but simple dict mapping usually works for simple structs.
-            result = method(**parameters)
-            
-            # Serialize result to string (suds objects are not directly JSON serializable usually)
-            # We use str() or we could try to convert to dict. 
-            # sudsobject_to_dict is a common utility but for now str() is safe generic fallback.
-            return str(result)
-
+            return [types.TextContent(type="text", text=str(result))]
         except Exception as e:
-            return f"Error executing '{method_name}': {str(e)}"
+            return [types.TextContent(type="text", text=f"Error executing {name}: {str(e)}")]
 
-    print(f"MCP Server running for WSDL: {wsdl_url}", file=sys.stderr)
-    mcp.run(transport="stdio")
+    async def run_server():
+        async with stdio_server() as (read_stream, write_stream):
+            await server.run(
+                read_stream,
+                write_stream,
+                server.create_initialization_options()
+            )
+
+    try:
+        asyncio.run(run_server())
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        print(f"Server error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

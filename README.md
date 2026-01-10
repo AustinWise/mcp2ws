@@ -23,22 +23,19 @@ To start the MCP server, run the `server.py` script with the URL of the WSDL fil
 python server.py <WSDL_URL>
 ```
 
-For example, if you have a WSDL at `http://example.com/service?wsdl`:
+For example, if you have a WSDL at `http://www.dneonline.com/calculator.asmx?wsdl`:
 
 ```bash
-python server.py http://example.com/service?wsdl
+python server.py http://www.dneonline.com/calculator.asmx?wsdl
 ```
 
 ## Available Tools
 
-The server exposes the following tools to the MCP client:
-
--   `list_methods()`: Returns a description of the available methods and types in the SOAP service.
--   `call_method(method_name, parameters)`: Calls a specific SOAP method. `parameters` should be a dictionary where keys match the argument names of the SOAP method.
+Each web service method will be available as a tool.
 
 ## Connection
 
-Configure your MCP client (e.g., Claude Desktop, or an IDE extension) to run this script.
+Configure your MCP client (e.g., Gemini CLI, or an IDE extension) to run this script.
 
 **Example generic MCP config:**
 
@@ -49,7 +46,7 @@ Configure your MCP client (e.g., Claude Desktop, or an IDE extension) to run thi
       "command": "python",
       "args": [
         "/path/to/server.py",
-        "http://example.com/service?wsdl"
+        "http://www.dneonline.com/calculator.asmx?wsdl"
       ]
     }
   }
