@@ -99,7 +99,7 @@ service:
 ## TODO
 
 * Better support for mapping XML schema to JSON schema for input. Currently only primitive types are supported.
-* Implement support for more of fun web service standards like
+* Implement support for more web service standards like
   [WS-*](https://en.wikipedia.org/wiki/List_of_web_service_specifications) and
   [UDDI](https://en.wikipedia.org/wiki/Web_Services_Discovery).
   This probably won't happen because this stops being a fun joke and starts being a job.
