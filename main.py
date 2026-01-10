@@ -35,7 +35,7 @@ def parse_suds_methods(client: Client) -> Dict[str, List[Dict[str, str]]]:
                     type_name = sd.xlate(arg_type)
                     args.append({"name": arg_name, "type": type_name})
                 methods[method_name] = args
-    
+
     return methods
 
 def main():
@@ -44,7 +44,7 @@ def main():
     args = parser.parse_args()
 
     wsdl_url = args.wsdl
-    
+
     try:
         client = Client(wsdl_url)
     except Exception as e:
@@ -82,7 +82,7 @@ def main():
                 }
             )
             tools.append(tool)
-            
+
         return types.ListToolsResult(tools=tools)
 
     @server.call_tool()
