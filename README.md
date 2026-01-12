@@ -4,8 +4,21 @@ Did you just wake up from a 20 year coma? Did you build a bunch of buzzword comp
 back in the early 2000s and want all your [SOAP](https://en.wikipedia.org/wiki/SOAP) and
 [WSDL](https://en.wikipedia.org/wiki/Web_Services_Description_Language)
 to be relevant again?
+
 Now you can put the smooth sheen of AI on your pile of angle brackets by exposing your
 SOAP-based web service as a [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server.
+It's time to wake from that coma and start hallucinating.
+
+## What?
+
+To explain the joke: back in the early 2000s
+[web services](https://en.wikipedia.org/wiki/Web_service)
+were promoted heavily by several companies as the future of how organizations interoperate with each
+other. The specific vision included a plethora of XML-based communication formats that never caught
+on broadly. Instead REST-ful web apis became the norm. But now 20 years later, MCP arrives claiming
+it too is the future of how companies interoperate, at least for AI-related applications. And unlike
+SOAP, there are a lot of very useful MCP servers and client delivering on that promise. So the
+conceit of this repos is to give SOAP-based web services a second chance at the limelight.
 
 ## Prerequisites
 
@@ -98,6 +111,8 @@ service:
 
 ## TODO
 
+* Expose `<documentation/>` tags from WSDL in the tool listing. I don't know how standard this is, but
+  I've seen these tags in .ASMX WSDL files.
 * Better support for mapping XML schema to JSON schema for input. Currently only primitive types are supported.
 * Implement support for more web service standards like
   [WS-*](https://en.wikipedia.org/wiki/List_of_web_service_specifications) and
