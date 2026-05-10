@@ -114,6 +114,8 @@ service:
 * Expose `<documentation/>` tags from WSDL in the tool listing. I don't know how standard this is, but
   I've seen these tags in .ASMX WSDL files.
 * Better support for mapping XML schema to JSON schema for input. Currently only primitive types are supported.
+* Add tests.
+* Run evals and optimize the how the tools are described in the MCP protocol.
 * Implement support for more web service standards like
   [WS-*](https://en.wikipedia.org/wiki/List_of_web_service_specifications) and
   [UDDI](https://en.wikipedia.org/wiki/Web_Services_Discovery).
